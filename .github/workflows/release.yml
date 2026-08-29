@@ -1,25 +1,60 @@
-# Runs when a version tag is pushed (e.g. v1.0.0).
+# Two ways in:
 #
-# Always: builds the mod and attaches the jar to a GitHub Release, so the tag is
-# useful even before Modrinth exists.
+#  1. Push a version tag (v1.0.0) -> builds, attaches the jar to a GitHub
+#     Release, and publishes the version to Modrinth.
+#  2. Run "Release" manually from the Actions tab -> preflight only. Checks the
+#     Modrinth credentials and project id without publishing anything. Use this
+#     after rotating the token.
 #
-# Additionally publishes to Modrinth, but ONLY if the repo variable
-# MODRINTH_PROJECT_ID is set. Without it the Modrinth step is skipped with a
-# loud warning rather than silently succeeding and uploading nothing:
-#   gh variable set MODRINTH_PROJECT_ID --repo <owner>/<repo> --body "<id>"
+# Credentials:
+#   secrets.MODRINTH_TOKEN     - organization secret, inherited by every repo
+#   vars.MODRINTH_PROJECT_ID   - per-repo variable, set once per mod
+#
+# No personal access key is needed on anyone's machine. Everything below runs
+# from the org secret.
 
 name: Release
 
 on:
   push:
-    tags:
-      - "v*"
+    tags: ["v*"]
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
+  preflight:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Modrinth credentials and project are usable
+        env:
+          TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          PID: ${{ vars.MODRINTH_PROJECT_ID }}
+        run: |
+          fail=0
+          if [ -z "$TOKEN" ]; then echo "::error::MODRINTH_TOKEN is empty (org secret missing)"; fail=1; fi
+          if [ -z "$PID" ]; then echo "::error::MODRINTH_PROJECT_ID is empty (repo variable missing)"; fail=1; fi
+          [ "$fail" = 1 ] && exit 1
+
+          code=$(curl -s -o /tmp/u.json -w '%{http_code}' -H "Authorization: $TOKEN" \
+                 -A 'Elduin-Labs/release-preflight' https://api.modrinth.com/v2/user)
+          if [ "$code" != "200" ]; then echo "::error::Token rejected by Modrinth (HTTP $code)"; exit 1; fi
+          echo "Token authenticates as: $(python3 -c 'import json;print(json.load(open("/tmp/u.json"))["username"])')"
+
+          code=$(curl -s -o /tmp/p.json -w '%{http_code}' -H "Authorization: $TOKEN" \
+                 -A 'Elduin-Labs/release-preflight' "https://api.modrinth.com/v2/project/$PID")
+          if [ "$code" != "200" ]; then echo "::error::Project $PID not found (HTTP $code)"; exit 1; fi
+          python3 - <<'PY'
+          import json
+          p = json.load(open("/tmp/p.json"))
+          print(f"Project: {p['title']} ({p['slug']})  status={p['status']}  versions={len(p.get('versions',[]))}")
+          PY
+          echo "Preflight OK - a version tag will publish to Modrinth."
+
   release:
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -34,10 +69,11 @@ jobs:
       - name: Build
         run: ./gradlew build --stacktrace
 
-      - name: Collect the release jar
+      - name: Find the release jar
         id: jar
         run: |
           jar=$(ls build/libs/*.jar | grep -Ev -- '-(sources|javadoc|dev|shadow)\.jar$' | head -1)
+          [ -z "$jar" ] && { echo "::error::no release jar in build/libs"; exit 1; }
           echo "path=$jar" >> "$GITHUB_OUTPUT"
           echo "Release jar: $jar"
 
@@ -47,14 +83,14 @@ jobs:
           files: ${{ steps.jar.outputs.path }}
           body_path: CHANGELOG.md
 
-      - name: Is Modrinth configured?
+      - name: Can we publish to Modrinth?
         id: check
         run: |
-          if [ -n "${{ vars.MODRINTH_PROJECT_ID }}" ]; then
+          if [ -n "${{ vars.MODRINTH_PROJECT_ID }}" ] && [ -n "${{ secrets.MODRINTH_TOKEN }}" ]; then
             echo "ready=true" >> "$GITHUB_OUTPUT"
           else
             echo "ready=false" >> "$GITHUB_OUTPUT"
-            echo "::warning::MODRINTH_PROJECT_ID is not set — skipping Modrinth. The jar is on the GitHub Release instead."
+            echo "::warning::MODRINTH_PROJECT_ID or MODRINTH_TOKEN missing - jar is on the GitHub Release only."
           fi
 
       - name: Publish to Modrinth
@@ -64,10 +100,18 @@ jobs:
           modrinth-id: ${{ vars.MODRINTH_PROJECT_ID }}
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
           files: ${{ steps.jar.outputs.path }}
-          name: ${{ github.ref_name }}
+          name: Ring Bong OS ${{ github.ref_name }}
           version: ${{ github.ref_name }}
           version-type: release
           changelog-file: CHANGELOG.md
           game-versions: "1.21.11"
+          game-version-filter: none
           loaders: fabric
           java: 21
+          # Set explicitly rather than inferred from fabric.mod.json, so a
+          # manifest change can never silently drop the dependency.
+          modrinth-dependencies: |
+            P7dR8mSH(required)
+          modrinth-featured: true
+          retry-attempts: 2
+          fail-mode: fail
