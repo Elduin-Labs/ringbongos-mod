@@ -51,6 +51,10 @@ jobs:
           p = json.load(open("/tmp/p.json"))
           print(f"Project: {p['title']} ({p['slug']})  status={p['status']}  versions={len(p.get('versions',[]))}")
           PY
+          # One-way fingerprint so we can tell WHICH token this is without
+          # ever revealing it. Lets us confirm CI does not depend on anybody's
+          # personal key.
+          echo "Token fingerprint: $(printf '%s' "$TOKEN" | shasum -a 256 | cut -c1-12)"
           echo "Preflight OK - a version tag will publish to Modrinth."
 
   release:
