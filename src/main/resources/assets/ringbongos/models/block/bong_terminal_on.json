@@ -1,0 +1,148 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "case": "ringbongos:block/terminal_case",
+    "screen": "ringbongos:block/terminal_screen_on",
+    "particle": "ringbongos:block/terminal_case"
+  },
+  "elements": [
+    {
+      "__comment": "The panel. Mounted against the wall on the +z side; the screen looks north.",
+      "from": [
+        3,
+        3,
+        13
+      ],
+      "to": [
+        13,
+        13,
+        16
+      ],
+      "faces": {
+        "north": {
+          "texture": "#screen",
+          "uv": [
+            0,
+            0,
+            16,
+            16
+          ]
+        },
+        "south": {
+          "texture": "#case",
+          "uv": [
+            3,
+            3,
+            13,
+            13
+          ]
+        },
+        "east": {
+          "texture": "#case",
+          "uv": [
+            13,
+            3,
+            16,
+            13
+          ]
+        },
+        "west": {
+          "texture": "#case",
+          "uv": [
+            0,
+            3,
+            3,
+            13
+          ]
+        },
+        "up": {
+          "texture": "#case",
+          "uv": [
+            3,
+            13,
+            13,
+            16
+          ]
+        },
+        "down": {
+          "texture": "#case",
+          "uv": [
+            3,
+            13,
+            13,
+            16
+          ]
+        }
+      }
+    },
+    {
+      "__comment": "Keyboard ledge under the screen.",
+      "from": [
+        4,
+        1,
+        12
+      ],
+      "to": [
+        12,
+        3,
+        16
+      ],
+      "faces": {
+        "north": {
+          "texture": "#case",
+          "uv": [
+            4,
+            13,
+            12,
+            15
+          ]
+        },
+        "south": {
+          "texture": "#case",
+          "uv": [
+            4,
+            13,
+            12,
+            15
+          ]
+        },
+        "east": {
+          "texture": "#case",
+          "uv": [
+            12,
+            13,
+            16,
+            15
+          ]
+        },
+        "west": {
+          "texture": "#case",
+          "uv": [
+            0,
+            13,
+            4,
+            15
+          ]
+        },
+        "up": {
+          "texture": "#case",
+          "uv": [
+            4,
+            4,
+            12,
+            8
+          ]
+        },
+        "down": {
+          "texture": "#case",
+          "uv": [
+            4,
+            4,
+            12,
+            8
+          ]
+        }
+      }
+    }
+  ]
+}

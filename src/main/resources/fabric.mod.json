@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "ringbongos",
+  "version": "${version}",
+  "name": "Ring Bong OS",
+  "description": "A wall terminal running Ring Bong OS: four little apps for pinging who is nearby, ringing the bong (which also pulses redstone), reading out world status, and scrolling back through the terminal's log.",
+  "authors": [
+    "Elduin"
+  ],
+  "license": "MIT",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.ringbongos.RingBongOS"
+    ],
+    "client": [
+      "com.ringbongos.client.RingBongOSClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.0",
+    "fabric-api": "*",
+    "minecraft": "~1.21.11",
+    "java": ">=21"
+  },
+  "mixins": [
+    "ringbongos.mixins.json"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "parent": "minecraft:story/mine_stone",
+  "display": {
+    "icon": {
+      "id": "ringbongos:bong_terminal"
+    },
+    "title": "Ring Bong OS Installed",
+    "description": "Craft a Bong Terminal and hang it on a wall.",
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "has_terminal": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "ringbongos:bong_terminal"
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_terminal"
+    ]
+  ]
+}

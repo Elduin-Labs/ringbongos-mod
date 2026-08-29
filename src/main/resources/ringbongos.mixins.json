@@ -1,0 +1,15 @@
+{
+  "required": true,
+  "package": "com.ringbongos.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "EntityRideMixin",
+    "MobRiderMixin"
+  ],
+  "client": [
+    "PlayerEntityRendererMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

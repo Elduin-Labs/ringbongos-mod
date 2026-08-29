@@ -1,0 +1,12 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "minecraft:arrow",
+    "minecraft:hopper"
+  ],
+  "result": {
+    "id": "ringbongos:courier_arrow",
+    "count": 4
+  }
+}

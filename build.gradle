@@ -1,0 +1,65 @@
+plugins {
+    id 'fabric-loom' version '1.17-SNAPSHOT'
+    id 'maven-publish'
+}
+
+version = project.mod_version
+group = project.maven_group
+
+base {
+    archivesName = project.archives_base_name
+}
+
+loom {
+    runs {
+        // A fixed dev username. Without this Loom invents a new PlayerNNN every launch, which
+        // means losing op on the server every time the client restarts.
+        client {
+            // Default name, overridable per launch: ./gradlew runClient -PmcUser=Elduin2
+            // A second client needs its own name or the server kicks the duplicate login.
+            programArgs '--username', (project.findProperty('mcUser') ?: 'Elduin')
+        }
+    }
+}
+
+repositories {
+}
+
+dependencies {
+    // Elduin's other 1.21.11 mods, loaded into the dev client so it matches the server.
+    fileTree(dir: "${System.getProperty('user.home')}/mod-release", include: '*.jar').each { jar ->
+        if (!jar.name.startsWith('ringbongos')) {
+            modLocalRuntime files(jar)
+        }
+    }
+
+    // Everything else the dev client needs: Mod Menu, Carry On, and copies of whatever is in
+    // ~/ringbong-server/mods but not in ~/mod-release. A client missing any of the server's mods
+    // is refused at the door with "registry entries that are unknown to this client", so drop a
+    // jar in here whenever one is added to the server.
+    fileTree(dir: "libs", include: '*.jar').each { jar ->
+        modLocalRuntime files(jar)
+    }
+
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
+}
+
+processResources {
+    inputs.property "version", project.version
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}
+
+tasks.withType(JavaCompile).configureEach {
+    it.options.release = 21
+}
+
+java {
+    withSourcesJar()
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
