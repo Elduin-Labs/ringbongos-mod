@@ -3,7 +3,7 @@
   "id": "ringbongos",
   "version": "${version}",
   "name": "Ring Bong OS",
-  "description": "A wall terminal running Ring Bong OS: four little apps for pinging who is nearby, ringing the bong (which also pulses redstone), reading out world status, and scrolling back through the terminal's log.",
+  "description": "A wall terminal running Ring Bong OS - ping who is nearby, ring the bong (it pulses redstone too), read world status and scroll the log. Plus courier arrows that fly your items into containers, a giant pickaxe, trampolines, rideable players, Herobrine mode and smarter respawning.",
   "authors": [
     "Elduin"
   ],

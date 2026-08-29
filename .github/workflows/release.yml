@@ -1,9 +1,12 @@
-# Publishes to Modrinth when a version tag is pushed (e.g. v1.2.3).
+# Runs when a version tag is pushed (e.g. v1.0.0).
 #
-# MODRINTH_TOKEN is inherited from the organization secret.
-# MODRINTH_PROJECT_ID must be set as a repo variable before the first release:
-#   gh variable set MODRINTH_PROJECT_ID --repo Elduin-Labs/ringbongos-mod --body "<id>"
-# Without it the run goes green and publishes nothing.
+# Always: builds the mod and attaches the jar to a GitHub Release, so the tag is
+# useful even before Modrinth exists.
+#
+# Additionally publishes to Modrinth, but ONLY if the repo variable
+# MODRINTH_PROJECT_ID is set. Without it the Modrinth step is skipped with a
+# loud warning rather than silently succeeding and uploading nothing:
+#   gh variable set MODRINTH_PROJECT_ID --repo <owner>/<repo> --body "<id>"
 
 name: Release
 
@@ -16,7 +19,7 @@ permissions:
   contents: write
 
 jobs:
-  publish:
+  release:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -28,20 +31,43 @@ jobs:
 
       - uses: gradle/actions/setup-gradle@v4
 
-      - run: ./gradlew build --stacktrace
+      - name: Build
+        run: ./gradlew build --stacktrace
 
-      - uses: Kira-NT/mc-publish@v3.3.1
+      - name: Collect the release jar
+        id: jar
+        run: |
+          jar=$(ls build/libs/*.jar | grep -Ev -- '-(sources|javadoc|dev|shadow)\.jar$' | head -1)
+          echo "path=$jar" >> "$GITHUB_OUTPUT"
+          echo "Release jar: $jar"
+
+      - name: Attach the jar to the GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ steps.jar.outputs.path }}
+          body_path: CHANGELOG.md
+
+      - name: Is Modrinth configured?
+        id: check
+        run: |
+          if [ -n "${{ vars.MODRINTH_PROJECT_ID }}" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::MODRINTH_PROJECT_ID is not set — skipping Modrinth. The jar is on the GitHub Release instead."
+          fi
+
+      - name: Publish to Modrinth
+        if: steps.check.outputs.ready == 'true'
+        uses: Kira-NT/mc-publish@v3.3.1
         with:
           modrinth-id: ${{ vars.MODRINTH_PROJECT_ID }}
           modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
-
-          files: build/libs/!(*-sources|*-dev|*-shadow|*-javadoc).jar
-
+          files: ${{ steps.jar.outputs.path }}
           name: ${{ github.ref_name }}
           version: ${{ github.ref_name }}
           version-type: release
           changelog-file: CHANGELOG.md
-
           game-versions: "1.21.11"
           loaders: fabric
           java: 21
