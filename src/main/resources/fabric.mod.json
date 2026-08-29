@@ -25,5 +25,6 @@
   },
   "mixins": [
     "ringbongos.mixins.json"
-  ]
+  ],
+  "icon": "assets/ringbongos/icon.png"
 }

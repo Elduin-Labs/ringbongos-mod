@@ -1,5 +1,7 @@
 # Ring Bong OS
 
+<img src="src/main/resources/assets/ringbongos/icon.png" width="128" align="right" alt="">
+
 A wall terminal for Minecraft 1.21.11 (Fabric) with a home screen of rounded app icons — an iOS-looking little OS.
 
 ## The Bong Terminal
