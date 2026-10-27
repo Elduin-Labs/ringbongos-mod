@@ -9,19 +9,15 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.ActionResult;
 import net.minecraft.util.Hand;
 import net.minecraft.util.hit.EntityHitResult;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.World;
 
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
 
 /**
- * Where the baby ravagers go. A thrown villager leg is a lure they run to; once it has gone stale
- * they trail whoever threw it instead.
+ * Baby ravagers already in a world trail the nearest player and can be ridden. Nothing makes new
+ * ones any more; this just keeps the existing ones tame.
  *
  * <p>Done by pushing the navigation around once a second rather than by adding AI goals, because
  * the babies are ordinary vanilla ravagers with their scale halved — there is no custom entity to
@@ -31,28 +27,15 @@ public final class BabyRavagers {
     /** Command tag that marks one of ours. */
     public static final String TAG = "baby_ravager";
 
-    /** How long a landed leg keeps their attention. */
-    private static final int LURE_TICKS = 300;
-
     /** Repathing every tick would be wasteful and jittery. */
     private static final int RETARGET_EVERY = 20;
 
     private static final double SPEED = 1.25;
-    private static final double LURE_RANGE = 48.0;
     private static final double FOLLOW_RANGE = 32.0;
 
-    private record Lure(Vec3d pos, @Nullable UUID thrower, int expiresAt) {
-    }
-
-    private static final Map<String, Lure> LURES = new HashMap<>();
     private static int ticks;
 
     private BabyRavagers() {
-    }
-
-    /** A leg just landed: everything nearby should come and look at it. */
-    public static void legLanded(ServerWorld world, Vec3d pos, @Nullable UUID thrower) {
-        LURES.put(key(world), new Lure(pos, thrower, ticks + LURE_TICKS));
     }
 
     public static void tick(MinecraftServer server) {
@@ -68,32 +51,19 @@ public final class BabyRavagers {
                 continue;
             }
 
-            Lure lure = LURES.get(key(world));
-            if (lure != null && ticks > lure.expiresAt()) {
-                LURES.remove(key(world));
-                lure = null;
-            }
-
             for (RavagerEntity baby : babies) {
                 // Somebody is driving; leave the navigation alone or it fights the rider.
                 if (baby.hasPassengers()) {
                     continue;
                 }
-                if (lure != null && baby.squaredDistanceTo(lure.pos()) <= LURE_RANGE * LURE_RANGE) {
-                    baby.getNavigation().startMovingTo(lure.pos().x, lure.pos().y, lure.pos().z, SPEED);
-                    continue;
-                }
-                follow(world, baby, lure == null ? null : lure.thrower());
+                follow(world, baby);
             }
         }
     }
 
-    /** Trails the thrower, or whoever is nearest if they have gone. */
-    private static void follow(ServerWorld world, RavagerEntity baby, @Nullable UUID thrower) {
-        PlayerEntity owner = thrower == null ? null : world.getPlayerByUuid(thrower);
-        if (owner == null) {
-            owner = world.getClosestPlayer(baby, FOLLOW_RANGE);
-        }
+    /** Trails whoever is nearest. */
+    private static void follow(ServerWorld world, RavagerEntity baby) {
+        PlayerEntity owner = world.getClosestPlayer(baby, FOLLOW_RANGE);
         if (owner == null || baby.squaredDistanceTo(owner) > FOLLOW_RANGE * FOLLOW_RANGE) {
             return;
         }
@@ -122,9 +92,5 @@ public final class BabyRavagers {
         }
 
         return player.startRiding(baby) ? ActionResult.SUCCESS : ActionResult.PASS;
-    }
-
-    private static String key(World world) {
-        return world.getRegistryKey().getValue().toString();
     }
 }

@@ -41,6 +41,19 @@ public final class OSPayloads {
         }
     }
 
+    /** "Take me to my baby." Fired by the BABY app. */
+    public record GoToBaby(BlockPos pos) implements CustomPayload {
+        public static final CustomPayload.Id<GoToBaby> ID =
+                new CustomPayload.Id<>(Identifier.of(RingBongOS.MOD_ID, "go_to_baby"));
+        public static final PacketCodec<RegistryByteBuf, GoToBaby> CODEC =
+                PacketCodec.tuple(BlockPos.PACKET_CODEC, GoToBaby::pos, GoToBaby::new);
+
+        @Override
+        public Id<? extends CustomPayload> getId() {
+            return ID;
+        }
+    }
+
     /** "F pressed — flip me between myself and Herobrine." */
     public record ToggleHerobrine() implements CustomPayload {
         public static final CustomPayload.Id<ToggleHerobrine> ID =
@@ -90,16 +103,17 @@ public final class OSPayloads {
      * again on every refresh, so the apps only ever draw what the server told them.
      *
      * @param nearby "<name>  <distance>m" lines, nearest first
+     * @param babies the viewer's own babies, same shape, nearest first
      * @param log    recent events, newest first
      */
     public record TerminalState(BlockPos pos, boolean powered, long uptimeTicks, long timeOfDay,
                                 boolean raining, String dimension, List<String> nearby,
-                                List<String> log) implements CustomPayload {
+                                List<String> babies, List<String> log) implements CustomPayload {
         public static final CustomPayload.Id<TerminalState> ID =
                 new CustomPayload.Id<>(Identifier.of(RingBongOS.MOD_ID, "terminal_state"));
 
         /**
-         * Hand-written rather than a tuple codec: eight fields, two of them lists, is past the
+         * Hand-written rather than a tuple codec: nine fields, three of them lists, is past the
          * point where the generated tuples stay readable.
          */
         public static final PacketCodec<RegistryByteBuf, TerminalState> CODEC =
@@ -113,6 +127,7 @@ public final class OSPayloads {
                         buf.writeBoolean(value.raining());
                         buf.writeString(value.dimension());
                         writeLines(buf, value.nearby());
+                        writeLines(buf, value.babies());
                         writeLines(buf, value.log());
                     }
 
@@ -125,6 +140,7 @@ public final class OSPayloads {
                                 buf.readVarLong(),
                                 buf.readBoolean(),
                                 buf.readString(),
+                                readLines(buf),
                                 readLines(buf),
                                 readLines(buf));
                     }

@@ -1,3 +1,7 @@
+## Next
+
+- Villager legs are gone. Villagers don't drop them, and baby ravagers don't come running to them.
+
 ## 1.0.0
 
 - Bong Terminal with four apps: ping, ring the bong, world status, log

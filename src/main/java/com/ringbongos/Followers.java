@@ -12,8 +12,8 @@ import java.util.List;
  * Villagers tagged {@code ringbongos.follower} trail the nearest player.
  *
  * <p>Vanilla villagers have no reason to follow anybody, so this pushes their navigation once a
- * second rather than adding an AI goal — the same approach the baby ravagers use, and for the same
- * reason: these are ordinary vanilla mobs with nothing custom to hang a goal on.
+ * second rather than adding an AI goal — these are ordinary vanilla mobs with nothing custom to hang
+ * a goal on.
  *
  * <p>A tagged villager must have {@code NoAI} off. NoAI switches off pathfinding entirely, so a
  * frozen villager will simply ignore everything here.

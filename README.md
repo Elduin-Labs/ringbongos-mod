@@ -30,7 +30,6 @@ Place a **Bong Terminal** on a wall and open it. Four little apps:
 - **Herobrine mode** — a keybind. *You never leave.*
 - **Riding people** — put a saddle on a player or mob and climb on. Sneak to get
   off. They get told they're being ridden.
-- **Baby ravagers**, because why not.
 - **Smarter respawning** — you wake up in a village, in somebody's house, or deep
   in a stronghold, and it tells you where.
 - **Commands** — `/pants` takes your armour off, plus helpers for finding an End

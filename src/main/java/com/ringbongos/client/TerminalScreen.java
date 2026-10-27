@@ -37,6 +37,7 @@ public class TerminalScreen extends Screen {
     private static final int ORANGE = 0xFFFF9F0A;
     private static final int GRAY = 0xFF8E8E93;
     private static final int GREEN = 0xFF30D158;
+    private static final int PINK = 0xFFFF375F;
     private static final int ON_ACCENT = 0xFFFFFFFF;
 
     /** How often the OS asks the server for fresh numbers, in milliseconds. */
@@ -47,7 +48,8 @@ public class TerminalScreen extends Screen {
         PING("Ping", BLUE),
         BONG("Bong", ORANGE),
         SYS("Status", GRAY),
-        LOG("Log", GREEN);
+        LOG("Log", GREEN),
+        BABY("Baby", PINK);
 
         private final String title;
         private final int accent;
@@ -80,12 +82,12 @@ public class TerminalScreen extends Screen {
         if (app == App.HOME) {
             // Two columns of app icons, the way a home screen lays them out.
             int gridLeft = screenLeft + 20;
-            int gridTop = top + 62;
-            App[] apps = {App.PING, App.BONG, App.SYS, App.LOG};
+            int gridTop = top + 56;
+            App[] apps = {App.PING, App.BONG, App.SYS, App.LOG, App.BABY};
             for (int i = 0; i < apps.length; i++) {
                 App target = apps[i];
                 int x = gridLeft + (i % 2) * 78;
-                int y = gridTop + (i / 2) * 74;
+                int y = gridTop + (i / 2) * 62;
                 addDrawableChild(new AppIcon(x, y, target, () -> switchTo(target)));
             }
             return;
@@ -98,6 +100,17 @@ public class TerminalScreen extends Screen {
             addDrawableChild(new Pill(screenLeft + 14, top + 150, screenWidth - 28, 22,
                     Text.literal("Ring"), ORANGE, true,
                     () -> ClientPlayNetworking.send(new OSPayloads.RingBong(pos))));
+        }
+
+        if (app == App.BABY) {
+            // Labelled for no baby in particular: the list above refreshes every second, and a
+            // button that renamed itself under the cursor would be worse than a plain one.
+            addDrawableChild(new Pill(screenLeft + 14, top + 150, screenWidth - 28, 22,
+                    Text.literal("Go to my baby"), PINK, true,
+                    () -> {
+                        ClientPlayNetworking.send(new OSPayloads.GoToBaby(pos));
+                        close();
+                    }));
         }
     }
 
@@ -158,6 +171,7 @@ public class TerminalScreen extends Screen {
                 case BONG -> renderBong(context, snapshot, contentLeft, contentWidth, top + 60);
                 case SYS -> renderSys(context, snapshot, contentLeft, contentWidth, top + 60);
                 case LOG -> renderLog(context, snapshot, contentLeft, contentWidth, top + 60);
+                case BABY -> renderBaby(context, snapshot, contentLeft, contentWidth, top + 60);
                 default -> {
                 }
             }
@@ -208,6 +222,15 @@ public class TerminalScreen extends Screen {
             return;
         }
         card(context, x, y, w, log.subList(0, Math.min(log.size(), 9)), LABEL);
+    }
+
+    private void renderBaby(DrawContext context, OSPayloads.TerminalState snapshot, int x, int w, int y) {
+        List<String> babies = snapshot.babies();
+        if (babies.isEmpty()) {
+            card(context, x, y, w, List.of("No baby of yours here"), SUBLABEL);
+            return;
+        }
+        card(context, x, y, w, babies, LABEL);
     }
 
     /** A white card holding one line of text per entry. */

@@ -40,6 +40,6 @@
   "ride.ringbongos.carrying": "%s climbed onto your shoulders",
   "ride.ringbongos.already_carrying": "They are already carrying you",
   "ride.ringbongos.mount_failed": "Could not get on",
-  "item.ringbongos.villager_leg": "Villager Leg",
-  "entity.ringbongos.villager_leg": "Villager Leg"
+  "app.ringbongos.baby.jumped": "Straight to %s",
+  "app.ringbongos.baby.none": "No baby of yours in this world"
 }

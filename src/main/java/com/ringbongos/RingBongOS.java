@@ -2,7 +2,6 @@ package com.ringbongos;
 
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
@@ -16,7 +15,6 @@ import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.piston.PistonBehavior;
 import net.minecraft.entity.EntityType;
-import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.SpawnGroup;
 import net.minecraft.item.BlockItem;
 import net.minecraft.item.Item;
@@ -96,28 +94,6 @@ public class RingBongOS implements ModInitializer {
             Registries.ITEM,
             COURIER_ARROW_KEY,
             new CourierArrowItem(new Item.Settings().registryKey(COURIER_ARROW_KEY))
-    );
-
-    public static final RegistryKey<Item> VILLAGER_LEG_KEY =
-            RegistryKey.of(RegistryKeys.ITEM, Identifier.of(MOD_ID, "villager_leg"));
-
-    public static final Item VILLAGER_LEG = Registry.register(
-            Registries.ITEM,
-            VILLAGER_LEG_KEY,
-            new VillagerLegItem(new Item.Settings().registryKey(VILLAGER_LEG_KEY).maxCount(16))
-    );
-
-    public static final RegistryKey<EntityType<?>> VILLAGER_LEG_ENTITY_KEY =
-            RegistryKey.of(RegistryKeys.ENTITY_TYPE, Identifier.of(MOD_ID, "villager_leg"));
-
-    public static final EntityType<ThrownVillagerLegEntity> VILLAGER_LEG_ENTITY = Registry.register(
-            Registries.ENTITY_TYPE,
-            VILLAGER_LEG_ENTITY_KEY,
-            EntityType.Builder.<ThrownVillagerLegEntity>create(ThrownVillagerLegEntity::new, SpawnGroup.MISC)
-                    .dimensions(0.25F, 0.25F)
-                    .maxTrackingRange(4)
-                    .trackingTickInterval(10)
-                    .build(VILLAGER_LEG_ENTITY_KEY)
     );
 
     public static final RegistryKey<Block> ONE_CYCLE_BED_KEY =
@@ -204,6 +180,7 @@ public class RingBongOS implements ModInitializer {
     public void onInitialize() {
         PayloadTypeRegistry.playC2S().register(OSPayloads.Refresh.ID, OSPayloads.Refresh.CODEC);
         PayloadTypeRegistry.playC2S().register(OSPayloads.RingBong.ID, OSPayloads.RingBong.CODEC);
+        PayloadTypeRegistry.playC2S().register(OSPayloads.GoToBaby.ID, OSPayloads.GoToBaby.CODEC);
         PayloadTypeRegistry.playC2S().register(OSPayloads.ToggleHerobrine.ID, OSPayloads.ToggleHerobrine.CODEC);
         PayloadTypeRegistry.playS2C().register(OSPayloads.TerminalState.ID, OSPayloads.TerminalState.CODEC);
         PayloadTypeRegistry.playS2C().register(OSPayloads.HerobrineSet.ID, OSPayloads.HerobrineSet.CODEC);
@@ -220,6 +197,23 @@ public class RingBongOS implements ModInitializer {
                     sendState(player, payload.pos());
                 }));
 
+        ServerPlayNetworking.registerGlobalReceiver(OSPayloads.GoToBaby.ID, (payload, context) ->
+                context.server().execute(() -> {
+                    ServerPlayerEntity player = context.player();
+                    if (!(player.getEntityWorld() instanceof ServerWorld world)
+                            || !(world.getBlockState(payload.pos()).getBlock() instanceof BongTerminalBlock)) {
+                        return;
+                    }
+                    String name = Babies.goToNearest(world, player);
+                    if (name == null) {
+                        player.sendMessage(Text.translatable("app.ringbongos.baby.none"), false);
+                        TerminalLog.append(world, payload.pos(), "BABY: none found");
+                        return;
+                    }
+                    player.sendMessage(Text.translatable("app.ringbongos.baby.jumped", name), false);
+                    TerminalLog.append(world, payload.pos(), "BABY: jumped to " + name);
+                }));
+
         ServerPlayNetworking.registerGlobalReceiver(OSPayloads.ToggleHerobrine.ID, (payload, context) ->
                 context.server().execute(() -> HerobrineManager.toggle(context.player())));
 
@@ -230,14 +224,6 @@ public class RingBongOS implements ModInitializer {
             HerobrineManager.forget(handler.player);
             RideablePlayers.forget(handler.player);
             StrongholdTitle.forget(handler.player);
-        });
-
-        // A dead villager leaves a leg behind.
-        ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
-            if (entity.getType() == EntityType.VILLAGER && entity.getEntityWorld() instanceof ServerWorld world) {
-                world.spawnEntity(new ItemEntity(world, entity.getX(), entity.getY() + 0.5, entity.getZ(),
-                        new ItemStack(VILLAGER_LEG)));
-            }
         });
 
         // Saddle a player, then climb on with a carrot on a stick.
@@ -273,7 +259,6 @@ public class RingBongOS implements ModInitializer {
             entries.add(GIANT_PICKAXE);
             entries.add(TRAMPOLINE_ITEM);
             entries.add(ONE_CYCLE_BED_ITEM);
-            entries.add(VILLAGER_LEG);
             // Bing Bong's two items share the tab. Looked up by id rather than compiled against,
             // so this mod still loads on its own if Bing Bong isn't installed.
             for (String id : BING_BONG_ITEMS) {
@@ -299,6 +284,7 @@ public class RingBongOS implements ModInitializer {
                 world.isRaining(),
                 world.getRegistryKey().getValue().getPath(),
                 nearby(world, pos, player),
+                Babies.lines(world, player),
                 TerminalLog.lines(world, pos)));
     }
 

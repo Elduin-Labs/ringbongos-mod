@@ -11,7 +11,6 @@ import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.render.entity.ArrowEntityRenderer;
-import net.minecraft.client.render.entity.FlyingItemEntityRenderer;
 import net.minecraft.client.util.InputUtil;
 
 import org.jetbrains.annotations.Nullable;
@@ -27,8 +26,6 @@ public class RingBongOSClient implements ClientModInitializer {
     public void onInitializeClient() {
         // A courier arrow is an arrow — the vanilla renderer draws it as-is.
         EntityRendererRegistry.register(RingBongOS.COURIER_ARROW_ENTITY, ArrowEntityRenderer::new);
-        // A thrown villager leg is drawn as the item itself, spinning through the air.
-        EntityRendererRegistry.register(RingBongOS.VILLAGER_LEG_ENTITY, FlyingItemEntityRenderer::new);
 
         herobrineKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.ringbongos.herobrine",
